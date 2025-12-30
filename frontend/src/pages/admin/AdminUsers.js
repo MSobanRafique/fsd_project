@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import './AdminUsers.css';
@@ -9,7 +9,7 @@ const AdminUsers = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'project_manager' });
   const { success, error } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const res = await api.get('/auth/users');
       setUsers(res.data);
@@ -18,9 +18,9 @@ const AdminUsers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [error]);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const handleCreate = async (e) => {
     e.preventDefault();

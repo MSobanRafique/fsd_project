@@ -1,7 +1,7 @@
 // Expenses Page Component
 // Frontend Developer - Person 1
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -27,11 +27,7 @@ const Expenses = () => {
   const canCreateExpense = user?.role === 'admin' || user?.role === 'project_manager';
   const canDeleteExpense = user?.role === 'admin' || user?.role === 'project_manager';
 
-  useEffect(() => {
-    fetchExpenses();
-  }, []);
-
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     try {
       const response = await api.get('/expenses');
       setExpenses(response.data);
@@ -41,7 +37,11 @@ const Expenses = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
 
   const handleCreateExpense = () => {
     setEditingExpense(null);

@@ -1,7 +1,7 @@
 // Projects List Page
 // Frontend Developer - Person 1
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FiFilter, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../../services/api';
@@ -29,11 +29,7 @@ const Projects = () => {
   const canCreateProject = !authLoading && user && user.role === 'admin';
   const canDeleteProject = !authLoading && user && user.role === 'admin';
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const response = await api.get('/projects');
       setProjects(response.data);
@@ -43,7 +39,11 @@ const Projects = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {

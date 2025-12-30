@@ -1,7 +1,7 @@
 // Material Create/Edit Modal
 // Person 1 - Frontend Developer
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiX } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -23,6 +23,29 @@ const MaterialModal = ({ isOpen, onClose, material, projectId, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const { success: showSuccess, error: showError } = useToast();
 
+  const fetchProjects = useCallback(async () => {
+    try {
+      const response = await api.get('/projects');
+      setProjects(response.data);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setFormData({
+      name: '',
+      category: 'other',
+      quantity: '',
+      unit: 'pieces',
+      project: projectId || '',
+      costPerUnit: '',
+      minThreshold: '10',
+      supplierName: '',
+      supplierContact: ''
+    });
+  }, [projectId]);
+
   useEffect(() => {
     if (isOpen) {
       fetchProjects();
@@ -42,30 +65,7 @@ const MaterialModal = ({ isOpen, onClose, material, projectId, onSuccess }) => {
         resetForm();
       }
     }
-  }, [isOpen, material, projectId]);
-
-  const fetchProjects = async () => {
-    try {
-      const response = await api.get('/projects');
-      setProjects(response.data);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      category: 'other',
-      quantity: '',
-      unit: 'pieces',
-      project: projectId || '',
-      costPerUnit: '',
-      minThreshold: '10',
-      supplierName: '',
-      supplierContact: ''
-    });
-  };
+  }, [isOpen, material, projectId, fetchProjects, resetForm]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -1,7 +1,7 @@
 // Document Upload Modal
 // Person 1 - Frontend Developer
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiX, FiUpload } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -18,30 +18,30 @@ const DocumentModal = ({ isOpen, onClose, projectId, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const { success: showSuccess, error: showError } = useToast();
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchProjects();
-      resetForm();
-    }
-  }, [isOpen, projectId]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const response = await api.get('/projects');
       setProjects(response.data);
     } catch (error) {
       console.error('Error fetching projects:', error);
     }
-  };
+  }, []);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       project: projectId || '',
       category: 'other',
       description: ''
     });
     setFile(null);
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchProjects();
+      resetForm();
+    }
+  }, [isOpen, fetchProjects, resetForm]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

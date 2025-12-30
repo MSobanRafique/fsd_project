@@ -1,7 +1,7 @@
 // Tasks Page Component
 // Frontend Developer - Person 1
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -30,11 +30,7 @@ const Tasks = () => {
   // Site workers can edit tasks assigned to them (backend allows this)
   const canEditTask = user?.role === 'admin' || user?.role === 'project_manager' || user?.role === 'site_worker';
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       const response = await api.get('/tasks');
       setTasks(response.data);
@@ -44,7 +40,11 @@ const Tasks = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleCreateTask = () => {
     setEditingTask(null);

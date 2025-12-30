@@ -1,7 +1,7 @@
 // Task Create/Edit Modal
 // Person 1 - Frontend Developer
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiX } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -23,6 +23,38 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const { success: showSuccess, error: showError } = useToast();
 
+  const fetchProjects = useCallback(async () => {
+    try {
+      const response = await api.get('/projects');
+      setProjects(response.data);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      // Fetch users for assignment
+      const response = await api.get('/auth/users');
+      setUsers(response.data);
+    } catch (error) {
+      console.log('Users endpoint not available');
+    }
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setFormData({
+      title: '',
+      description: '',
+      project: projectId || '',
+      assignedTo: '',
+      priority: 'medium',
+      deadline: '',
+      status: 'pending',
+      progress: 0
+    });
+  }, [projectId]);
+
   useEffect(() => {
     if (isOpen) {
       fetchProjects();
@@ -42,39 +74,7 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
         resetForm();
       }
     }
-  }, [isOpen, task, projectId]);
-
-  const fetchProjects = async () => {
-    try {
-      const response = await api.get('/projects');
-      setProjects(response.data);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      // Fetch users for assignment
-      const response = await api.get('/auth/users');
-      setUsers(response.data);
-    } catch (error) {
-      console.log('Users endpoint not available');
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      description: '',
-      project: projectId || '',
-      assignedTo: '',
-      priority: 'medium',
-      deadline: '',
-      status: 'pending',
-      progress: 0
-    });
-  };
+  }, [isOpen, task, projectId, fetchProjects, fetchUsers, resetForm]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -1,7 +1,7 @@
 // Documents Page Component
 // Person 1 - Frontend Developer
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiTrash2, FiDownload } from 'react-icons/fi';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -26,11 +26,7 @@ const Documents = () => {
   const canUploadDocument = user?.role === 'admin' || user?.role === 'project_manager';
   const canDeleteDocument = user?.role === 'admin' || user?.role === 'project_manager';
 
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       const response = await api.get('/documents');
       setDocuments(response.data);
@@ -40,7 +36,11 @@ const Documents = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const handleDownload = async (documentId, filename) => {
     try {

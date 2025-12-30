@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import './Approvals.css';
@@ -9,7 +9,7 @@ const Approvals = () => {
   const [loading, setLoading] = useState(true);
   const { success, error } = useToast();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [expRes, matRes] = await Promise.all([
         api.get('/expenses'),
@@ -22,9 +22,9 @@ const Approvals = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [error]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const approveExpense = async (id, status) => {
     try {

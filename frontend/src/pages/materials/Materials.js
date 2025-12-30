@@ -1,7 +1,7 @@
 // Materials Page Component
 // Person 1 - Frontend Developer
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -29,11 +29,7 @@ const Materials = () => {
   // Site workers can edit materials in projects where they have tasks (backend allows this)
   const canEditMaterial = user?.role === 'admin' || user?.role === 'project_manager' || user?.role === 'site_worker';
 
-  useEffect(() => {
-    fetchMaterials();
-  }, []);
-
-  const fetchMaterials = async () => {
+  const fetchMaterials = useCallback(async () => {
     try {
       const response = await api.get('/materials');
       setMaterials(response.data);
@@ -43,7 +39,11 @@ const Materials = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchMaterials();
+  }, [fetchMaterials]);
 
   const handleCreateMaterial = () => {
     setEditingMaterial(null);
