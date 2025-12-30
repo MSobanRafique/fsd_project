@@ -1,0 +1,299 @@
+// Task Create/Edit Modal
+// Person 1 - Frontend Developer
+
+import React, { useState, useEffect } from 'react';
+import { FiX } from 'react-icons/fi';
+import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import './Modal.css';
+
+const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    project: projectId || '',
+    assignedTo: '',
+    priority: 'medium',
+    deadline: '',
+    status: 'pending',
+    progress: 0
+  });
+  const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { success: showSuccess, error: showError } = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchProjects();
+      fetchUsers();
+      if (task) {
+        setFormData({
+          title: task.title || '',
+          description: task.description || '',
+          project: task.project?._id || task.project || projectId || '',
+          assignedTo: task.assignedTo?._id || task.assignedTo || '',
+          priority: task.priority || 'medium',
+          deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '',
+          status: task.status || 'pending',
+          progress: task.progress || 0
+        });
+      } else {
+        resetForm();
+      }
+    }
+  }, [isOpen, task, projectId]);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await api.get('/projects');
+      setProjects(response.data);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      // Fetch users for assignment
+      const response = await api.get('/auth/users');
+      setUsers(response.data);
+    } catch (error) {
+      console.log('Users endpoint not available');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      project: projectId || '',
+      assignedTo: '',
+      priority: 'medium',
+      deadline: '',
+      status: 'pending',
+      progress: 0
+    });
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'progress' ? parseInt(value) : value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.title.trim()) {
+      showError('Task title is required');
+      return;
+    }
+
+    if (!formData.project) {
+      showError('Project is required');
+      return;
+    }
+
+    if (!formData.assignedTo) {
+      showError('Assigned user is required');
+      return;
+    }
+
+    if (!formData.deadline) {
+      showError('Deadline is required');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const submitData = {
+        ...formData,
+        progress: parseInt(formData.progress) || 0
+      };
+
+      if (task) {
+        await api.put(`/tasks/${task._id}`, submitData);
+        showSuccess('Task updated successfully');
+      } else {
+        await api.post('/tasks', submitData);
+        showSuccess('Task created successfully');
+      }
+      
+      onSuccess();
+      onClose();
+      resetForm();
+    } catch (error) {
+      showError(error.response?.data?.message || 'Failed to save task');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{task ? 'Edit Task' : 'Create New Task'}</h2>
+          <button className="modal-close" onClick={onClose}>
+            <FiX />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-group">
+            <label htmlFor="title">Task Title *</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              placeholder="Enter task title"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="3"
+              placeholder="Enter task description"
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="project">Project *</label>
+              <select
+                id="project"
+                name="project"
+                value={formData.project}
+                onChange={handleChange}
+                required
+                disabled={!!projectId}
+              >
+                <option value="">Select Project</option>
+                {projects.map(proj => (
+                  <option key={proj._id} value={proj._id}>{proj.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="assignedTo">Assign To *</label>
+              {users.length > 0 ? (
+                <select
+                  id="assignedTo"
+                  name="assignedTo"
+                  value={formData.assignedTo}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select User</option>
+                  {users.map(user => (
+                    <option key={user._id} value={user._id}>
+                      {user.name} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  id="assignedTo"
+                  name="assignedTo"
+                  value={formData.assignedTo}
+                  onChange={handleChange}
+                  required
+                  placeholder="User ID"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="priority">Priority</label>
+              <select
+                id="priority"
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="deadline">Deadline *</label>
+              <input
+                type="date"
+                id="deadline"
+                name="deadline"
+                value={formData.deadline}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </div>
+
+          {task && (
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="status">Status</label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="on_hold">On Hold</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="progress">Progress (%)</label>
+                <input
+                  type="number"
+                  id="progress"
+                  name="progress"
+                  value={formData.progress}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? 'Saving...' : task ? 'Update Task' : 'Create Task'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default TaskModal;
+
