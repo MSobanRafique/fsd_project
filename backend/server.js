@@ -6,14 +6,17 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/database');
+const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
 
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
+// Connect to database (async, will be cached after first connection)
+connectDB().catch((err) => {
+  console.error('Initial database connection attempt failed:', err);
+});
 
 // Create uploads directory if it doesn't exist (only for local dev)
 // Vercel serverless functions use /tmp for writable storage
@@ -41,6 +44,27 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Middleware to ensure database is connected (for serverless)
+app.use('/api', async (req, res, next) => {
+  // Skip health check
+  if (req.path === '/health') {
+    return next();
+  }
+  
+  // Check mongoose connection state: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
+  if (mongoose.connection.readyState !== 1) {
+    try {
+      await connectDB();
+    } catch (error) {
+      return res.status(503).json({ 
+        message: 'Database connection not available', 
+        error: error.message 
+      });
+    }
+  }
+  next();
+});
 
 // Serve uploaded files
 app.use('/uploads', express.static(uploadsDir));
