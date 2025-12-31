@@ -15,16 +15,30 @@ dotenv.config();
 // Connect to database
 connectDB();
 
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
+// Create uploads directory if it doesn't exist (only for local dev)
+// Vercel serverless functions use /tmp for writable storage
+const uploadsDir = process.env.VERCEL 
+  ? path.join('/tmp', 'uploads')
+  : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 const app = express();
 
+// CORS configuration - allow Netlify frontend
+const corsOptions = {
+  origin: [
+    'https://dreamy-croquembouche-f7c369.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:5000'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
