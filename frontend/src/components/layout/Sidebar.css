@@ -3,7 +3,7 @@
 
 .sidebar {
   width: 260px;
-  background-color: var(--bg-primary);
+  background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   border-right: 1px solid var(--border-color);
   min-height: calc(100vh - 64px);
   position: fixed;
@@ -13,11 +13,13 @@
   overflow-x: hidden;
   z-index: 100;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="dark"] .sidebar {
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(15, 23, 42, 0.95) 100%);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+  border-right-color: var(--border-color);
 }
 
 .sidebar.open {
@@ -56,26 +58,40 @@
 }
 
 .sidebar-link:hover {
-  background: linear-gradient(90deg, rgba(37, 99, 235, 0.08) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
   color: var(--primary-color);
   transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
 }
 
 [data-theme="dark"] .sidebar-link:hover {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
 .sidebar-link.active {
-  background: linear-gradient(90deg, rgba(37, 99, 235, 0.12) 0%, transparent 100%);
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0.05) 100%);
   color: var(--primary-color);
   border-left-color: var(--primary-color);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.1);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15), inset 0 0 0 1px rgba(37, 99, 235, 0.1);
+  position: relative;
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-light) 100%);
+  border-radius: 0 2px 2px 0;
 }
 
 [data-theme="dark"] .sidebar-link.active {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, transparent 100%);
-  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.15);
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.1) 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2), inset 0 0 0 1px rgba(59, 130, 246, 0.2);
 }
 
 .sidebar-icon {

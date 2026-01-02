@@ -7,17 +7,19 @@
   left: 0;
   right: 0;
   height: 64px;
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
   z-index: 1000;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="dark"] .navbar {
-  background-color: rgba(30, 41, 59, 0.8);
+  background: rgba(30, 41, 59, 0.85);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  border-bottom-color: var(--border-color);
 }
 
 .navbar-container {
@@ -71,11 +73,21 @@
 .navbar-brand {
   text-decoration: none;
   color: var(--primary-color);
+  transition: all 0.2s ease;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
 }
 
 .navbar-brand h1 {
   font-size: var(--font-size-xl);
   font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: all 0.2s ease;
 }
 
 .navbar-menu {
@@ -101,9 +113,15 @@
 }
 
 .theme-toggle-btn:hover {
-  background-color: var(--bg-secondary);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(37, 99, 235, 0.1) 100%);
   color: var(--primary-color);
-  transform: scale(1.05) rotate(15deg);
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+[data-theme="dark"] .theme-toggle-btn:hover {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(59, 130, 246, 0.15) 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
 
 .theme-toggle-btn:focus {
@@ -143,15 +161,32 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: var(--font-size-sm);
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-logout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-logout:hover::before {
+  left: 100%;
 }
 
 .btn-logout:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-  opacity: 0.95;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), 0 4px 12px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, #f87171 0%, var(--danger-color) 100%);
 }
 
 .btn-logout:active {
