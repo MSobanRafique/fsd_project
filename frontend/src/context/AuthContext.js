@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }) => {
       setToken(token);
       
       // Set user data with role from backend response
-      setUser({
+      const user = {
         _id: userData._id,
         name: userData.name,
         email: userData.email,
@@ -101,9 +101,10 @@ export const AuthProvider = ({ children }) => {
         phone: userData.phone || '',
         address: userData.address || '',
         profilePic: userData.profilePic || ''
-      });
+      };
+      setUser(user);
       
-      return { success: true };
+      return { success: true, user };
     } catch (error) {
       return { 
         success: false, 
@@ -122,7 +123,7 @@ export const AuthProvider = ({ children }) => {
       setToken(token);
       
       // Set user data with role from backend response
-      setUser({
+      const userData = {
         _id: user._id,
         name: user.name,
         email: user.email,
@@ -130,9 +131,10 @@ export const AuthProvider = ({ children }) => {
         phone: user.phone || '',
         address: user.address || '',
         profilePic: user.profilePic || ''
-      });
+      };
+      setUser(userData);
       
-      return { success: true };
+      return { success: true, user: userData };
     } catch (error) {
       return { 
         success: false, 

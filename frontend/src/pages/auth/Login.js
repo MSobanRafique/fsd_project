@@ -64,7 +64,15 @@ const Login = () => {
 
     if (result.success) {
       showSuccess('Welcome back!');
-      navigate('/dashboard');
+      // Redirect based on user role
+      const roleHome = {
+        admin: '/admin',
+        project_manager: '/manager',
+        site_worker: '/portal',
+        client: '/portal'
+      };
+      const userRole = result.user?.role || 'site_worker';
+      navigate(roleHome[userRole] || '/dashboard');
     } else {
       showError(result.message || 'Login failed. Please check your credentials.');
     }
