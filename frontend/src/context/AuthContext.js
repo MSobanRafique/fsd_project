@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }) => {
       setToken(token);
       
       // Set user data with role from backend response
-      const userData = {
+      const newUser = {
         _id: user._id,
         name: user.name,
         email: user.email,
@@ -132,9 +132,9 @@ export const AuthProvider = ({ children }) => {
         address: user.address || '',
         profilePic: user.profilePic || ''
       };
-      setUser(userData);
+      setUser(newUser);
       
-      return { success: true, user: userData };
+      return { success: true, user: newUser };
     } catch (error) {
       return { 
         success: false, 
