@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { FiFolder, FiCheckSquare, FiDollarSign, FiPackage, FiFile, FiAlertCircle, FiTrendingUp, FiClock, FiUsers } from 'react-icons/fi';
+import { FiFolder, FiCheckSquare, FiDollarSign, FiPackage, FiFile, FiAlertCircle, FiTrendingUp, FiClock } from 'react-icons/fi';
 import api from '../../services/api';
 import './ManagerDashboard.css';
 
