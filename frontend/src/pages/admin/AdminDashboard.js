@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { FiUsers, FiFolder, FiCheckSquare, FiDollarSign, FiPackage, FiFile, FiAlertCircle, FiTrendingUp, FiClock } from 'react-icons/fi';
+import { FiFolder, FiCheckSquare, FiDollarSign, FiPackage, FiFile, FiAlertCircle, FiTrendingUp, FiClock } from 'react-icons/fi';
 import api from '../../services/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState([]);
   const [recentProjects, setRecentProjects] = useState([]);
   const [pendingExpenses, setPendingExpenses] = useState([]);
   const [pendingMaterials, setPendingMaterials] = useState([]);
@@ -18,15 +17,6 @@ const AdminDashboard = () => {
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching admin stats', error);
-    }
-  }, []);
-
-  const fetchUsers = useCallback(async () => {
-    try {
-      const response = await api.get('/auth/users');
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Error fetching users', error);
     }
   }, []);
 
@@ -60,22 +50,13 @@ const AdminDashboard = () => {
       setLoading(true);
       await Promise.all([
         fetchStats(),
-        fetchUsers(),
         fetchRecentProjects(),
         fetchPendingItems()
       ]);
       setLoading(false);
     };
     loadData();
-  }, [fetchStats, fetchUsers, fetchRecentProjects, fetchPendingItems]);
-
-  // Calculate user breakdown by role
-  const userBreakdown = {
-    admin: users.filter(u => u.role === 'admin').length,
-    project_manager: users.filter(u => u.role === 'project_manager').length,
-    site_worker: users.filter(u => u.role === 'site_worker').length,
-    client: users.filter(u => u.role === 'client').length
-  };
+  }, [fetchStats, fetchRecentProjects, fetchPendingItems]);
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -103,12 +84,9 @@ const AdminDashboard = () => {
       <div className="dashboard-header">
         <div>
           <h1>Admin Dashboard</h1>
-          <p>Manage users, projects, and view system overview.</p>
+          <p>View projects and system overview.</p>
         </div>
         <div className="dashboard-actions">
-          <Link to="/admin/users" className="btn btn-primary">
-            <FiUsers /> Manage Users
-          </Link>
           <Link to="/projects" className="btn btn-secondary">
             <FiFolder /> View Projects
           </Link>
@@ -126,19 +104,6 @@ const AdminDashboard = () => {
             <p className="stat-value">{stats.projects?.total || 0}</p>
             <p className="stat-subtitle">
               {stats.projects?.active || 0} active • {stats.projects?.completed || 0} completed
-            </p>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon-wrapper users">
-            <FiUsers />
-          </div>
-          <div className="stat-content">
-            <h3>Total Users</h3>
-            <p className="stat-value">{users.length}</p>
-            <p className="stat-subtitle">
-              {userBreakdown.project_manager} Managers • {userBreakdown.site_worker} Workers
             </p>
           </div>
         </div>
@@ -198,11 +163,6 @@ const AdminDashboard = () => {
       <div className="dashboard-section">
         <h2 className="section-title">Quick Actions</h2>
         <div className="quick-actions-grid">
-          <Link to="/admin/users" className="action-card">
-            <FiUsers className="action-icon" />
-            <h3>Manage Users</h3>
-            <p>Create and manage user accounts</p>
-          </Link>
           <Link to="/projects" className="action-card">
             <FiFolder className="action-icon" />
             <h3>View Projects</h3>
@@ -318,48 +278,6 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* User Breakdown */}
-      <div className="dashboard-section">
-        <h2 className="section-title">User Breakdown</h2>
-        <div className="user-breakdown">
-          <div className="breakdown-item">
-            <div className="breakdown-icon admin">
-              <FiUsers />
-            </div>
-            <div className="breakdown-content">
-              <h3>Admins</h3>
-              <p className="breakdown-value">{userBreakdown.admin}</p>
-            </div>
-          </div>
-          <div className="breakdown-item">
-            <div className="breakdown-icon manager">
-              <FiUsers />
-            </div>
-            <div className="breakdown-content">
-              <h3>Project Managers</h3>
-              <p className="breakdown-value">{userBreakdown.project_manager}</p>
-            </div>
-          </div>
-          <div className="breakdown-item">
-            <div className="breakdown-icon worker">
-              <FiUsers />
-            </div>
-            <div className="breakdown-content">
-              <h3>Site Workers</h3>
-              <p className="breakdown-value">{userBreakdown.site_worker}</p>
-            </div>
-          </div>
-          <div className="breakdown-item">
-            <div className="breakdown-icon client">
-              <FiUsers />
-            </div>
-            <div className="breakdown-content">
-              <h3>Clients</h3>
-              <p className="breakdown-value">{userBreakdown.client}</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
