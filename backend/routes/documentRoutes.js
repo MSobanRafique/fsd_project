@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const {
   getDocuments,
   getDocument,
@@ -14,11 +15,19 @@ const {
 } = require('../controllers/documentController');
 const { auth } = require('../middleware/auth');
 
+// Determine uploads directory (Vercel uses /tmp, local uses ./uploads)
+const uploadsDir = process.env.VERCEL
+  ? path.join('/tmp', 'uploads')
+  : path.join(__dirname, '..', 'uploads');
+
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Use absolute path for uploads directory
-    const uploadsDir = path.join(__dirname, '..', 'uploads');
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {

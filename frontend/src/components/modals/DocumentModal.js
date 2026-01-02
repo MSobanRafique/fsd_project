@@ -84,11 +84,7 @@ const DocumentModal = ({ isOpen, onClose, projectId, onSuccess }) => {
       uploadData.append('category', formData.category);
       uploadData.append('description', formData.description);
 
-      await api.post('/documents', uploadData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      await api.post('/documents', uploadData);
       
       showSuccess('Document uploaded successfully');
       onSuccess();

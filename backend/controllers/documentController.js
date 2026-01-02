@@ -7,6 +7,19 @@ const Project = require('../models/Project');
 const path = require('path');
 const fs = require('fs');
 
+// Helper function to resolve file path (handles both local and Vercel)
+const resolveFilePath = (filepath) => {
+  if (path.isAbsolute(filepath)) {
+    return filepath;
+  }
+  // For Vercel, files are in /tmp/uploads
+  if (process.env.VERCEL) {
+    return path.join('/tmp', filepath.replace(/^uploads[\/\\]/, 'uploads/'));
+  }
+  // For local, files are in ./uploads
+  return path.join(__dirname, '..', filepath);
+};
+
 exports.getDocuments = async (req, res) => {
   try {
     let query = {};
@@ -126,6 +139,10 @@ exports.uploadDocument = async (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
+    if (!req.body.project) {
+      return res.status(400).json({ message: 'Project is required' });
+    }
+
     const document = await Document.create({
       filename: req.file.filename,
       originalName: req.file.originalname,
@@ -144,7 +161,19 @@ exports.uploadDocument = async (req, res) => {
 
     res.status(201).json(populatedDocument);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Document upload error:', error);
+    // If file was uploaded but document creation failed, try to delete the file
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error deleting uploaded file:', unlinkError);
+      }
+    }
+    res.status(500).json({ 
+      message: error.message || 'Failed to upload document',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -167,9 +196,7 @@ exports.deleteDocument = async (req, res) => {
     }
 
     // Delete file from filesystem
-    const absolutePath = path.isAbsolute(document.filepath) 
-      ? document.filepath 
-      : path.join(__dirname, '..', document.filepath);
+    const absolutePath = resolveFilePath(document.filepath);
     
     if (fs.existsSync(absolutePath)) {
       fs.unlinkSync(absolutePath);
@@ -195,9 +222,7 @@ exports.downloadDocument = async (req, res) => {
     }
 
     // Resolve absolute path - filepath is stored as 'uploads/filename'
-    const absolutePath = path.isAbsolute(document.filepath) 
-      ? document.filepath 
-      : path.join(__dirname, '..', document.filepath);
+    const absolutePath = resolveFilePath(document.filepath);
 
     if (!fs.existsSync(absolutePath)) {
       console.error('File not found at path:', absolutePath);
