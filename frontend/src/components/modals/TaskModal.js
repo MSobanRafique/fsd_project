@@ -5,9 +5,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FiX } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import './Modal.css';
 
 const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -110,10 +112,14 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
     setLoading(true);
 
     try {
-      const submitData = {
-        ...formData,
-        progress: parseInt(formData.progress) || 0
-      };
+      const submitData = { ...formData };
+      
+      // Remove progress field for admin users
+      if (user?.role === 'admin') {
+        delete submitData.progress;
+      } else {
+        submitData.progress = parseInt(formData.progress) || 0;
+      }
 
       if (task) {
         await api.put(`/tasks/${task._id}`, submitData);
@@ -266,18 +272,20 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="progress">Progress (%)</label>
-                <input
-                  type="number"
-                  id="progress"
-                  name="progress"
-                  value={formData.progress}
-                  onChange={handleChange}
-                  min="0"
-                  max="100"
-                />
-              </div>
+              {user?.role !== 'admin' && (
+                <div className="form-group">
+                  <label htmlFor="progress">Progress (%)</label>
+                  <input
+                    type="number"
+                    id="progress"
+                    name="progress"
+                    value={formData.progress}
+                    onChange={handleChange}
+                    min="0"
+                    max="100"
+                  />
+                </div>
+              )}
             </div>
           )}
 
