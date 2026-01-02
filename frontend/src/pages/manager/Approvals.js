@@ -71,7 +71,7 @@ const Approvals = () => {
               {expenses.map((exp) => (
                 <tr key={exp._id}>
                   <td>{exp.project?.name || 'N/A'}</td>
-                  <td>{exp.amount}</td>
+                  <td>PKR {exp.amount.toLocaleString()}</td>
                   <td>{exp.category}</td>
                   <td>{exp.description}</td>
                   <td>

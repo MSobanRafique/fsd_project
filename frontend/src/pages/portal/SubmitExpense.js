@@ -64,7 +64,7 @@ const SubmitExpense = () => {
         </select>
         <input
           type="number"
-          placeholder="Amount"
+          placeholder="Amount (PKR)"
           value={form.amount}
           onChange={(e) => setForm({ ...form, amount: e.target.value })}
           required
