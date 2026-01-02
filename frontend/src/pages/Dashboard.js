@@ -1,98 +1,142 @@
 // Dashboard Page Component
 // Person 1 - Frontend Developer
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiFolder, FiCheckSquare, FiDollarSign, FiPackage } from 'react-icons/fi';
 import api from '../services/api';
+import { TableSkeleton } from '../components/common/LoadingSkeleton';
 import './Dashboard.css';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await api.get('/dashboard/stats');
       setStats(response.data);
+      setLastUpdate(new Date());
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchStats();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [fetchStats]);
+
+  const formatCurrency = (amount) => {
+    return `PKR ${(amount || 0).toLocaleString('en-PK', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    })}`;
+  };
+
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
   if (loading) {
-    return <div className="loading">Loading dashboard...</div>;
+    return (
+      <div className="dashboard">
+        <div className="dashboard-header">
+          <h1>Dashboard</h1>
+        </div>
+        <TableSkeleton rows={4} cols={3} />
+      </div>
+    );
   }
 
   if (!stats) {
-    return <div className="error">Failed to load dashboard data</div>;
+    return (
+      <div className="dashboard">
+        <div className="dashboard-error">Failed to load dashboard data</div>
+      </div>
+    );
   }
+
+  const budgetUtilization = stats.budget?.total > 0 
+    ? ((stats.budget?.spent / stats.budget?.total) * 100).toFixed(1)
+    : 0;
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>Dashboard</h1>
-        <p>Welcome back! Here's an overview of your projects.</p>
+        <div>
+          <h1>Dashboard</h1>
+          <p>Welcome back! Here's an overview of your projects.</p>
+          {lastUpdate && (
+            <p className="last-update">
+              Last updated: {formatTime(lastUpdate)} • Auto-refreshing every 30s
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon projects">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
+          <div className="stat-icon-wrapper projects">
+            <FiFolder />
           </div>
           <div className="stat-content">
             <h3>Projects</h3>
-            <p className="stat-value">{stats.projects.total}</p>
-            <p className="stat-subtitle">{stats.projects.active} active</p>
+            <p className="stat-value">{stats.projects?.total || 0}</p>
+            <p className="stat-subtitle">
+              {stats.projects?.active || 0} active • {stats.projects?.completed || 0} completed
+            </p>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon tasks">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <polyline points="9 11 12 14 22 4"></polyline>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
+          <div className="stat-icon-wrapper tasks">
+            <FiCheckSquare />
           </div>
           <div className="stat-content">
             <h3>Tasks</h3>
-            <p className="stat-value">{stats.tasks.total}</p>
-            <p className="stat-subtitle">{stats.tasks.completed} completed</p>
+            <p className="stat-value">{stats.tasks?.total || 0}</p>
+            <p className="stat-subtitle">
+              {stats.tasks?.completed || 0} completed • {stats.tasks?.pending || 0} pending
+            </p>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon budget">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="12" y1="1" x2="12" y2="23"></line>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-            </svg>
+          <div className="stat-icon-wrapper budget">
+            <FiDollarSign />
           </div>
           <div className="stat-content">
             <h3>Budget</h3>
-            <p className="stat-value">PKR {stats.budget.total.toLocaleString()}</p>
-            <p className="stat-subtitle">PKR {stats.budget.remaining.toLocaleString()} remaining</p>
+            <p className="stat-value">{formatCurrency(stats.budget?.total || 0)}</p>
+            <p className="stat-subtitle">
+              {formatCurrency(stats.budget?.spent || 0)} spent • {budgetUtilization}% utilized
+            </p>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon materials">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="9" y1="3" x2="9" y2="21"></line>
-              <line x1="3" y1="9" x2="21" y2="9"></line>
-            </svg>
+          <div className="stat-icon-wrapper materials">
+            <FiPackage />
           </div>
           <div className="stat-content">
             <h3>Materials</h3>
-            <p className="stat-value">{stats.materials.total}</p>
-            <p className="stat-subtitle">{stats.materials.lowStock} low stock</p>
+            <p className="stat-value">{stats.materials?.total || 0}</p>
+            <p className="stat-subtitle">
+              {stats.materials?.lowStock || 0} low stock items
+            </p>
           </div>
         </div>
       </div>
@@ -103,15 +147,15 @@ const Dashboard = () => {
           <div className="task-stats">
             <div className="task-stat-item">
               <span className="task-label">Completed</span>
-              <span className="task-value">{stats.tasks.completed}</span>
+              <span className="task-value">{stats.tasks?.completed || 0}</span>
             </div>
             <div className="task-stat-item">
               <span className="task-label">In Progress</span>
-              <span className="task-value">{stats.tasks.inProgress}</span>
+              <span className="task-value">{stats.tasks?.inProgress || 0}</span>
             </div>
             <div className="task-stat-item">
               <span className="task-label">Pending</span>
-              <span className="task-value">{stats.tasks.pending}</span>
+              <span className="task-value">{stats.tasks?.pending || 0}</span>
             </div>
           </div>
         </div>
@@ -121,20 +165,20 @@ const Dashboard = () => {
           <div className="budget-stats">
             <div className="budget-item">
               <span className="budget-label">Total Budget</span>
-              <span className="budget-value">PKR {stats.budget.total.toLocaleString()}</span>
+              <span className="budget-value">{formatCurrency(stats.budget?.total || 0)}</span>
             </div>
             <div className="budget-item">
               <span className="budget-label">Spent</span>
-              <span className="budget-value spent">PKR {stats.budget.spent.toLocaleString()}</span>
+              <span className="budget-value spent">{formatCurrency(stats.budget?.spent || 0)}</span>
             </div>
             <div className="budget-item">
               <span className="budget-label">Remaining</span>
-              <span className="budget-value remaining">PKR {stats.budget.remaining.toLocaleString()}</span>
+              <span className="budget-value remaining">{formatCurrency(stats.budget?.remaining || 0)}</span>
             </div>
             <div className="budget-progress">
               <div 
                 className="budget-progress-bar" 
-                style={{ width: `${(stats.budget.spent / stats.budget.total) * 100}%` }}
+                style={{ width: `${budgetUtilization}%` }}
               ></div>
             </div>
           </div>
