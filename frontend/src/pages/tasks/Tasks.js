@@ -180,7 +180,11 @@ const Tasks = () => {
               <p className="task-description">{task.description || 'No description'}</p>
               <div className="task-info">
                 <span><strong>Project:</strong> {task.project?.name || 'N/A'}</span>
-                <span><strong>Assigned to:</strong> {task.assignedTo?.name || 'N/A'}</span>
+                <span><strong>Assigned to:</strong> {
+                  Array.isArray(task.assignedTo) 
+                    ? task.assignedTo.map(u => u?.name || 'N/A').join(', ') 
+                    : (task.assignedTo?.name || 'N/A')
+                }</span>
                 <span><strong>Progress:</strong> {task.progress}%</span>
                 <span><strong>Deadline:</strong> {new Date(task.deadline).toLocaleDateString()}</span>
               </div>

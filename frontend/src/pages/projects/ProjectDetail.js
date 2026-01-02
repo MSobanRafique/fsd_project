@@ -51,7 +51,11 @@ const ProjectDetail = () => {
         <div>
           <h1>{project.name}</h1>
           <p className="project-meta">
-            Manager: {project.manager?.name || 'N/A'} | 
+            Manager{Array.isArray(project.manager) && project.manager.length > 1 ? 's' : ''}: {
+              Array.isArray(project.manager) 
+                ? project.manager.map(m => m?.name || 'N/A').join(', ') 
+                : (project.manager?.name || 'N/A')
+            } | 
             Status: <span style={{ color: getStatusColor(project.status) }}>
               {project.status.replace('_', ' ')}
             </span>

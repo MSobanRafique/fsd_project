@@ -17,7 +17,7 @@ const ProjectModal = ({ isOpen, onClose, project, onSuccess }) => {
     budget: '',
     location: '',
     status: 'planning',
-    manager: '',
+    manager: [],
     client: ''
   });
   const [users, setUsers] = useState([]);
@@ -30,6 +30,16 @@ const ProjectModal = ({ isOpen, onClose, project, onSuccess }) => {
     if (isOpen) {
       fetchUsers();
       if (project) {
+        // Handle both array and single value (for backward compatibility)
+        let managerValue = [];
+        if (project.manager) {
+          if (Array.isArray(project.manager)) {
+            managerValue = project.manager.map(m => m._id || m);
+          } else {
+            managerValue = [project.manager._id || project.manager];
+          }
+        }
+        
         setFormData({
           name: project.name || '',
           description: project.description || '',
@@ -38,7 +48,7 @@ const ProjectModal = ({ isOpen, onClose, project, onSuccess }) => {
           budget: project.budget || '',
           location: project.location || '',
           status: project.status || 'planning',
-          manager: project.manager?._id || project.manager || '',
+          manager: managerValue,
           client: project.client?._id || project.client || ''
         });
       } else {
@@ -69,7 +79,7 @@ const ProjectModal = ({ isOpen, onClose, project, onSuccess }) => {
       budget: '',
       location: '',
       status: 'planning',
-      manager: '',
+      manager: [],
       client: ''
     });
   };
@@ -89,6 +99,14 @@ const ProjectModal = ({ isOpen, onClose, project, onSuccess }) => {
       
       return updated;
     });
+  };
+
+  const handleManagerChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+    setFormData(prev => ({
+      ...prev,
+      manager: selectedOptions
+    }));
   };
 
   const validateDates = (startDate, endDate) => {
@@ -122,6 +140,11 @@ const ProjectModal = ({ isOpen, onClose, project, onSuccess }) => {
 
     if (!formData.startDate || !formData.endDate) {
       showError('Start date and end date are required');
+      return;
+    }
+
+    if (!formData.manager || formData.manager.length === 0) {
+      showError('At least one project manager is required');
       return;
     }
 
@@ -320,29 +343,40 @@ const ProjectModal = ({ isOpen, onClose, project, onSuccess }) => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="manager">Project Manager</label>
+              <label htmlFor="manager">Project Manager(s) * (Select multiple)</label>
               {users.length > 0 ? (
-                <select
-                  id="manager"
-                  name="manager"
-                  value={formData.manager}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Manager (or leave empty for self)</option>
-                  {users.filter(u => u.role === 'project_manager').map(user => (
-                    <option key={user._id} value={user._id}>
-                      {user.name} ({user.email})
-                    </option>
-                  ))}
-                </select>
+                <>
+                  <select
+                    id="manager"
+                    name="manager"
+                    multiple
+                    value={formData.manager}
+                    onChange={handleManagerChange}
+                    required
+                    style={{ minHeight: '100px', padding: '8px' }}
+                    title="Hold Ctrl (Windows) or Cmd (Mac) to select multiple managers"
+                  >
+                    {users.filter(u => u.role === 'project_manager').map(user => (
+                      <option key={user._id} value={user._id}>
+                        {user.name} ({user.email})
+                      </option>
+                    ))}
+                  </select>
+                  {formData.manager.length > 0 && (
+                    <div style={{ marginTop: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                      {formData.manager.length} manager(s) selected
+                    </div>
+                  )}
+                </>
               ) : (
                 <input
                   type="text"
                   id="manager"
                   name="manager"
-                  value={formData.manager}
+                  value={Array.isArray(formData.manager) ? formData.manager.join(',') : formData.manager}
                   onChange={handleChange}
-                  placeholder="Manager ID (or leave empty for self)"
+                  required
+                  placeholder="Manager IDs (comma separated)"
                 />
               )}
             </div>

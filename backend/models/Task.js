@@ -20,9 +20,15 @@ const taskSchema = new mongoose.Schema({
     required: [true, 'Project reference is required']
   },
   assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: [mongoose.Schema.Types.ObjectId],
     ref: 'User',
-    required: [true, 'Task must be assigned to a user']
+    required: [true, 'Task must be assigned to at least one user'],
+    validate: {
+      validator: function(v) {
+        return Array.isArray(v) && v.length > 0;
+      },
+      message: 'Task must be assigned to at least one user'
+    }
   },
   status: {
     type: String,
@@ -54,7 +60,7 @@ const taskSchema = new mongoose.Schema({
 
 // Indexes for performance
 taskSchema.index({ project: 1 });
-taskSchema.index({ assignedTo: 1 });
+taskSchema.index({ assignedTo: 1 }); // Works with arrays too
 taskSchema.index({ status: 1 });
 taskSchema.index({ deadline: 1 });
 

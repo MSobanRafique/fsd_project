@@ -14,11 +14,12 @@ exports.getProjects = async (req, res) => {
     
     // Filter by role
     if (req.user.role === 'project_manager') {
+      // Project managers see projects where they are in the manager array
       query.manager = req.user._id;
     } else if (req.user.role === 'client') {
       query.client = req.user._id;
     } else if (req.user.role === 'site_worker') {
-      // Get projects where user has tasks
+      // Get projects where user has tasks (assignedTo can be array now)
       const userTasks = await Task.find({ assignedTo: req.user._id }).distinct('project');
       query._id = { $in: userTasks };
     }
@@ -50,7 +51,12 @@ exports.getProject = async (req, res) => {
     // Check authorization based on role
     if (req.user.role === 'project_manager') {
       // Project managers can only see projects they manage
-      if (project.manager._id.toString() !== req.user._id.toString()) {
+      // Handle both array and single value (for backward compatibility)
+      const managerIds = Array.isArray(project.manager) 
+        ? project.manager.map(m => m._id ? m._id.toString() : m.toString())
+        : [project.manager._id ? project.manager._id.toString() : project.manager.toString()];
+      
+      if (!managerIds.includes(req.user._id.toString())) {
         return res.status(403).json({ message: 'You do not have permission to view this project' });
       }
     } else if (req.user.role === 'client') {
@@ -59,7 +65,7 @@ exports.getProject = async (req, res) => {
         return res.status(403).json({ message: 'You do not have permission to view this project' });
       }
     } else if (req.user.role === 'site_worker') {
-      // Site workers can only see projects where they have tasks
+      // Site workers can only see projects where they have tasks (assignedTo can be array now)
       const userTasks = await Task.find({ assignedTo: req.user._id, project: project._id });
       if (userTasks.length === 0) {
         return res.status(403).json({ message: 'You do not have permission to view this project' });
@@ -90,9 +96,14 @@ exports.createProject = async (req, res) => {
       return res.status(400).json({ message: 'Project manager is required' });
     }
 
+    // Ensure manager is an array
+    const managerArray = Array.isArray(req.body.manager) 
+      ? req.body.manager 
+      : [req.body.manager];
+
     const project = await Project.create({
       ...req.body,
-      manager: req.body.manager // Use the provided manager, don't default to current user
+      manager: managerArray
     });
 
     const populatedProject = await Project.findById(project._id)
@@ -118,8 +129,20 @@ exports.updateProject = async (req, res) => {
     }
 
     // Check authorization
-    if (req.user.role !== 'admin' && project.manager.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to update this project' });
+    if (req.user.role !== 'admin') {
+      // Handle both array and single value (for backward compatibility)
+      const managerIds = Array.isArray(project.manager) 
+        ? project.manager.map(m => m.toString())
+        : [project.manager.toString()];
+      
+      if (!managerIds.includes(req.user._id.toString())) {
+        return res.status(403).json({ message: 'Not authorized to update this project' });
+      }
+    }
+
+    // Ensure manager is an array if provided
+    if (req.body.manager && !Array.isArray(req.body.manager)) {
+      req.body.manager = [req.body.manager];
     }
 
     const updatedProject = await Project.findByIdAndUpdate(

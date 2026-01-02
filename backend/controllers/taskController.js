@@ -12,14 +12,14 @@ exports.getTasks = async (req, res) => {
     
     // Filter tasks based on user role FIRST
     if (req.user.role === 'site_worker') {
-      // Site workers see only tasks assigned to them
+      // Site workers see only tasks assigned to them (check if user is in assignedTo array)
       query.assignedTo = req.user._id;
       // If project query is provided, verify the task is assigned to this user
       if (req.query.project) {
         query.project = req.query.project;
       }
     } else if (req.user.role === 'project_manager') {
-      // Project managers see only tasks assigned to them
+      // Project managers see only tasks assigned to them (check if user is in assignedTo array)
       query.assignedTo = req.user._id;
       // If project query is provided, verify the task is assigned to this manager
       if (req.query.project) {
@@ -74,7 +74,12 @@ exports.getTask = async (req, res) => {
     // Check if user has permission to view this task
     if (req.user.role === 'site_worker' || req.user.role === 'project_manager') {
       // Site workers and project managers can only see tasks assigned to them
-      if (task.assignedTo._id.toString() !== req.user._id.toString()) {
+      // Handle both array and single value (for backward compatibility)
+      const assignedIds = Array.isArray(task.assignedTo) 
+        ? task.assignedTo.map(u => u._id ? u._id.toString() : u.toString())
+        : [task.assignedTo._id ? task.assignedTo._id.toString() : task.assignedTo.toString()];
+      
+      if (!assignedIds.includes(req.user._id.toString())) {
         return res.status(403).json({ message: 'You do not have permission to view this task' });
       }
     } else if (req.user.role === 'client') {
@@ -95,6 +100,11 @@ exports.getTask = async (req, res) => {
 // Create task
 exports.createTask = async (req, res) => {
   try {
+    // Ensure assignedTo is an array
+    if (req.body.assignedTo && !Array.isArray(req.body.assignedTo)) {
+      req.body.assignedTo = [req.body.assignedTo];
+    }
+    
     const task = await Task.create(req.body);
     
     const populatedTask = await Task.findById(task._id)
@@ -119,7 +129,12 @@ exports.updateTask = async (req, res) => {
     // Check authorization
     if (req.user.role === 'site_worker' || req.user.role === 'project_manager') {
       // Site workers and project managers can only update tasks assigned to them
-      if (task.assignedTo.toString() !== req.user._id.toString()) {
+      // Handle both array and single value (for backward compatibility)
+      const assignedIds = Array.isArray(task.assignedTo) 
+        ? task.assignedTo.map(id => id.toString())
+        : [task.assignedTo.toString()];
+      
+      if (!assignedIds.includes(req.user._id.toString())) {
         return res.status(403).json({ message: 'You do not have permission to update this task' });
       }
     } else if (req.user.role === 'client') {
@@ -132,6 +147,11 @@ exports.updateTask = async (req, res) => {
     if (req.body.status === 'completed' && task.status !== 'completed') {
       req.body.completedAt = new Date();
       req.body.progress = 100;
+    }
+
+    // Ensure assignedTo is an array if provided
+    if (req.body.assignedTo && !Array.isArray(req.body.assignedTo)) {
+      req.body.assignedTo = [req.body.assignedTo];
     }
 
     const updatedTask = await Task.findByIdAndUpdate(
@@ -159,7 +179,12 @@ exports.deleteTask = async (req, res) => {
     // Check authorization
     if (req.user.role === 'project_manager') {
       // Project managers can only delete tasks assigned to them
-      if (task.assignedTo.toString() !== req.user._id.toString()) {
+      // Handle both array and single value (for backward compatibility)
+      const assignedIds = Array.isArray(task.assignedTo) 
+        ? task.assignedTo.map(id => id.toString())
+        : [task.assignedTo.toString()];
+      
+      if (!assignedIds.includes(req.user._id.toString())) {
         return res.status(403).json({ message: 'You do not have permission to delete this task' });
       }
     } else if (req.user.role === 'site_worker' || req.user.role === 'client') {

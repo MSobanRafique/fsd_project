@@ -14,7 +14,7 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
     title: '',
     description: '',
     project: projectId || '',
-    assignedTo: '',
+    assignedTo: [],
     priority: 'medium',
     deadline: '',
     status: 'pending',
@@ -49,7 +49,7 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
       title: '',
       description: '',
       project: projectId || '',
-      assignedTo: '',
+      assignedTo: [],
       priority: 'medium',
       deadline: '',
       status: 'pending',
@@ -62,11 +62,21 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
       fetchProjects();
       fetchUsers();
       if (task) {
+        // Handle both array and single value (for backward compatibility)
+        let assignedToValue = [];
+        if (task.assignedTo) {
+          if (Array.isArray(task.assignedTo)) {
+            assignedToValue = task.assignedTo.map(u => u._id || u);
+          } else {
+            assignedToValue = [task.assignedTo._id || task.assignedTo];
+          }
+        }
+        
         setFormData({
           title: task.title || '',
           description: task.description || '',
           project: task.project?._id || task.project || projectId || '',
-          assignedTo: task.assignedTo?._id || task.assignedTo || '',
+          assignedTo: assignedToValue,
           priority: task.priority || 'medium',
           deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '',
           status: task.status || 'pending',
@@ -86,6 +96,14 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
     }));
   };
 
+  const handleAssignedToChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+    setFormData(prev => ({
+      ...prev,
+      assignedTo: selectedOptions
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -99,8 +117,8 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
       return;
     }
 
-    if (!formData.assignedTo) {
-      showError('Assigned user is required');
+    if (!formData.assignedTo || formData.assignedTo.length === 0) {
+      showError('At least one user must be assigned');
       return;
     }
 
@@ -196,16 +214,18 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="assignedTo">Assign To *</label>
+              <label htmlFor="assignedTo">Assign To * (Select multiple)</label>
               {users.length > 0 ? (
                 <select
                   id="assignedTo"
                   name="assignedTo"
+                  multiple
                   value={formData.assignedTo}
-                  onChange={handleChange}
+                  onChange={handleAssignedToChange}
                   required
+                  style={{ minHeight: '100px', padding: '8px' }}
+                  title="Hold Ctrl (Windows) or Cmd (Mac) to select multiple users"
                 >
-                  <option value="">Select User</option>
                   {users.map(user => (
                     <option key={user._id} value={user._id}>
                       {user.name} ({user.email})
@@ -217,11 +237,16 @@ const TaskModal = ({ isOpen, onClose, task, projectId, onSuccess }) => {
                   type="text"
                   id="assignedTo"
                   name="assignedTo"
-                  value={formData.assignedTo}
+                  value={Array.isArray(formData.assignedTo) ? formData.assignedTo.join(',') : formData.assignedTo}
                   onChange={handleChange}
                   required
-                  placeholder="User ID"
+                  placeholder="User IDs (comma separated)"
                 />
+              )}
+              {formData.assignedTo.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  {formData.assignedTo.length} user(s) selected
+                </div>
               )}
             </div>
           </div>

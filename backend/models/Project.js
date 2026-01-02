@@ -15,9 +15,15 @@ const projectSchema = new mongoose.Schema({
     default: ''
   },
   manager: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: [mongoose.Schema.Types.ObjectId],
     ref: 'User',
-    required: [true, 'Project manager is required']
+    required: [true, 'Project must have at least one manager'],
+    validate: {
+      validator: function(v) {
+        return Array.isArray(v) && v.length > 0;
+      },
+      message: 'Project must have at least one manager'
+    }
   },
   status: {
     type: String,
@@ -51,7 +57,7 @@ const projectSchema = new mongoose.Schema({
 });
 
 // Index for faster queries
-projectSchema.index({ manager: 1 });
+projectSchema.index({ manager: 1 }); // Works with arrays too
 projectSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Project', projectSchema);

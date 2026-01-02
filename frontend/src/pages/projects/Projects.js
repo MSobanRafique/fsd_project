@@ -47,9 +47,18 @@ const Projects = () => {
 
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
+      // Helper to get manager names for search
+      const getManagerNames = (manager) => {
+        if (!manager) return '';
+        if (Array.isArray(manager)) {
+          return manager.map(m => m?.name || '').join(' ').toLowerCase();
+        }
+        return (manager?.name || '').toLowerCase();
+      };
+      
       const matchesSearch = project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            (project.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           (project.manager?.name || '').toLowerCase().includes(searchQuery.toLowerCase());
+                           getManagerNames(project.manager).includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -152,7 +161,11 @@ const Projects = () => {
       ) : (
         <div className="projects-grid">
           {filteredProjects.map((project) => {
-            const canEdit = user?.role === 'admin' || (user?.role === 'project_manager' && project.manager?._id === user._id);
+            // Check if user is in manager array
+            const isManager = Array.isArray(project.manager) 
+              ? project.manager.some(m => (m._id || m).toString() === user?._id)
+              : (project.manager?._id || project.manager)?.toString() === user?._id;
+            const canEdit = user?.role === 'admin' || (user?.role === 'project_manager' && isManager);
             
             return (
               <div key={project._id} className="project-card-wrapper">
@@ -173,7 +186,11 @@ const Projects = () => {
               <div className="project-footer">
                 <div className="project-info">
                   <span className="info-item">
-                    <strong>Manager:</strong> {project.manager?.name || 'N/A'}
+                    <strong>Manager{Array.isArray(project.manager) && project.manager.length > 1 ? 's' : ''}:</strong> {
+                      Array.isArray(project.manager) 
+                        ? project.manager.map(m => m?.name || 'N/A').join(', ') 
+                        : (project.manager?.name || 'N/A')
+                    }
                   </span>
                   <span className="info-item">
                     <strong>Budget:</strong> PKR {project.budget?.toLocaleString() || '0'}
